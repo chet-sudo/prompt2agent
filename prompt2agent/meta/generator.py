@@ -15,6 +15,7 @@ logger = get_logger(__name__)
 
 _SYSTEM_PROMPT = (
     "You generate JSON workflow definitions for a multi-agent orchestration system. "
+    "Every workflow must include at least two distinct agents. "
     "Respond with JSON that follows this schema: {schema}. Do not include explanations."
 )
 
