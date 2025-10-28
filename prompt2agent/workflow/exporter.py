@@ -10,7 +10,7 @@ from prompt2agent.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-EXPORT_TEMPLATE = """\
+EXPORT_TEMPLATE = '''\
 """Auto-generated workflow runner."""
 from __future__ import annotations
 
@@ -34,7 +34,7 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-"""
+'''
 
 
 
