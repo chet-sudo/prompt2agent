@@ -26,6 +26,7 @@ WORKFLOW_JSON_SCHEMA: Dict[str, Any] = {
         },
         "agents": {
             "type": "array",
+            "minItems": 2,
             "items": {
                 "type": "object",
                 "required": ["id", "name", "instructions"],
@@ -126,8 +127,8 @@ def validate_workflow(workflow: Dict[str, Any]) -> Tuple[bool, List[str]]:
             errors.append(f"metadata.{field} is required")
 
     agents = workflow.get("agents", [])
-    if not isinstance(agents, list) or not agents:
-        errors.append("At least one agent definition is required")
+    if not isinstance(agents, list) or len(agents) < 2:
+        errors.append("At least two agent definitions are required")
     else:
         try:
             _validate_agent_ids(agents)
