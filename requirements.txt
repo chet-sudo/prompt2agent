@@ -1,2 +1,2 @@
 httpx>=0.25
-openai-agents-python>=0.0.1
+openai-agents
