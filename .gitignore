@@ -1,3 +1,9 @@
+# Custom
+.env
+.environment
+runs
+workflows
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

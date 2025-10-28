@@ -12,11 +12,14 @@ except ModuleNotFoundError:  # pragma: no cover - handled at runtime
 if TYPE_CHECKING:  # pragma: no cover - typing only
     import httpx
 
-from prompt2agent.config import DEFAULT_MODEL, OPENROUTER_API_KEY_ENV, OPENROUTER_BASE_URL
+from prompt2agent.config import DEFAULT_MODEL, OPENROUTER_BASE_URL
 from prompt2agent.utils.logging import get_logger
+from dotenv import load_dotenv
 
+load_dotenv()
 logger = get_logger(__name__)
 
+openrouter_api_key = os.environ.get("OPENROUTER_API_KEY")
 
 class ModelAdapter:
     """Adapter that proxies chat completions to OpenRouter."""
@@ -31,7 +34,7 @@ class ModelAdapter:
     ) -> None:
         self.model = model or DEFAULT_MODEL
         self.base_url = base_url or OPENROUTER_BASE_URL
-        self.api_key = api_key or os.environ.get(OPENROUTER_API_KEY_ENV, "")
+        self.api_key = openrouter_api_key
         self.timeout = timeout
 
     async def chat(
