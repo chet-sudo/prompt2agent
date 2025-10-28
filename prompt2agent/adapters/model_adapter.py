@@ -2,9 +2,15 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Mapping, MutableMapping
 
-import httpx
+try:  # pragma: no cover - import guard for optional dependency
+    import httpx  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover - handled at runtime
+    httpx = None  # type: ignore
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    import httpx
 
 from prompt2agent.config import DEFAULT_MODEL, OPENROUTER_API_KEY_ENV, OPENROUTER_BASE_URL
 from prompt2agent.utils.logging import get_logger
@@ -38,6 +44,12 @@ class ModelAdapter:
         extra_body: Dict[str, Any] | None = None,
     ) -> str:
         """Execute a chat completion request using OpenRouter."""
+        if httpx is None:
+            raise RuntimeError(
+                "The 'httpx' dependency is required for live model access. "
+                "Install httpx to enable remote generation, or rely on the built-in fallback workflow."
+            )
+
         if not self.api_key:
             raise RuntimeError(
                 "OPENROUTER_API_KEY is not set. Export the key before running commands."
