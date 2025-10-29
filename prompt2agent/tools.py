@@ -11,7 +11,7 @@ from typing import Any, Dict
 
 from agents import Agent, Tool, WebSearchTool, function_tool
 
-from models import ToolSpec
+from .models import ToolSpec
 
 _SAFE_GLOBALS: MappingProxyType[str, Any] = MappingProxyType(
     {

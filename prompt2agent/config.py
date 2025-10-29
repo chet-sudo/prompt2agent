@@ -6,10 +6,17 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
-from agents.extensions.models.litellm_provider import LitellmProvider
 from agents.models.interface import ModelProvider
 
 from dotenv import load_dotenv
+
+try:
+    from agents.extensions.models.litellm_provider import LitellmProvider
+except ImportError as exc:  # pragma: no cover - depends on optional extra
+    LitellmProvider = None  # type: ignore[assignment]
+    _LITELLM_IMPORT_ERROR = exc
+else:  # pragma: no branch - executed when optional dependency is available
+    _LITELLM_IMPORT_ERROR = None
 
 load_dotenv()
 
@@ -67,23 +74,43 @@ def ensure_provider_config() -> ProviderConfig:
             "Missing OpenRouter credentials. Set OPENROUTER_API_KEY before running workflows."
         )
 
-    provider_name = os.getenv(ENV_LITELLM_PROVIDER, DEFAULT_PROVIDER).strip().lower()
+    provider_name = (os.getenv(ENV_LITELLM_PROVIDER) or DEFAULT_PROVIDER).strip().lower()
     if provider_name != DEFAULT_PROVIDER:
         raise EnvironmentValidationError(
             f"Unsupported LiteLLM provider '{provider_name}'. Configure LITELLM_PROVIDER=openrouter."
         )
 
-    model_id = os.getenv(ENV_MODEL_ID)
-    if not model_id:
-        raise EnvironmentValidationError("MODEL_ID is required to select the default model.")
+    def _clean_model(value: str | None) -> str:
+        if not value:
+            return ""
+        return value.strip().lstrip("=")
 
-    base_url = os.getenv(ENV_OPENROUTER_BASE_URL, DEFAULT_OPENROUTER_BASE_URL).strip()
+    model_id = _clean_model(os.getenv(ENV_MODEL_ID))
+    if not model_id:
+        model_id = _clean_model(os.getenv(ENV_OPENAI_DEFAULT_MODEL))
+
+    if not model_id:
+        raise EnvironmentValidationError(
+            "MODEL_ID is required to select the default model. Set MODEL_ID or OPENAI_DEFAULT_MODEL."
+        )
+
+    if not model_id.startswith(f"{DEFAULT_PROVIDER}/"):
+        model_id = f"{DEFAULT_PROVIDER}/{model_id.lstrip('/')}"
+
+    base_url = (os.getenv(ENV_OPENROUTER_BASE_URL) or DEFAULT_OPENROUTER_BASE_URL).strip() or DEFAULT_OPENROUTER_BASE_URL
 
     # Normalise environment variables so both LiteLLM and the Agents SDK resolve the same defaults.
     os.environ[ENV_OPENROUTER_KEY] = api_key
     os.environ[ENV_LITELLM_PROVIDER] = DEFAULT_PROVIDER
+    os.environ[ENV_MODEL_ID] = model_id
     os.environ.setdefault(ENV_OPENAI_DEFAULT_MODEL, model_id)
     os.environ.setdefault(ENV_OPENROUTER_BASE_URL, base_url)
+
+    if LitellmProvider is None:
+        raise EnvironmentValidationError(
+            "LiteLLM integration is unavailable. Install the optional dependency with "
+            "`pip install 'openai-agents[litellm]'` to enable model routing."
+        ) from _LITELLM_IMPORT_ERROR
 
     provider = LitellmProvider()
     return ProviderConfig(model_id=model_id, provider=provider, base_url=base_url)

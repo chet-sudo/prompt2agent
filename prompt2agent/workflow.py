@@ -8,9 +8,9 @@ from typing import Dict, List
 
 from agents import Agent, Tool
 
-from config import ProviderConfig, ensure_provider_config
-from models import ToolSpec, WorkflowSpec
-from tools import attach_agent_tools, build_base_tools
+from .config import ProviderConfig, ensure_provider_config
+from .models import ToolSpec, WorkflowSpec
+from .tools import attach_agent_tools, build_base_tools
 
 logger = logging.getLogger(__name__)
 
