@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import ast
+import logging
 import re
 import textwrap
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from types import MappingProxyType
 from typing import Any, Dict
 
 from agents import Agent, Tool, WebSearchTool, function_tool
+from agents.tool import FunctionTool
 
 from .models import ToolSpec
 
@@ -27,6 +29,8 @@ _SAFE_GLOBALS: MappingProxyType[str, Any] = MappingProxyType(
         }
     }
 )
+
+logger = logging.getLogger(__name__)
 
 
 @function_tool(name_override="python_repl", description_override="Execute short Python snippets.")
@@ -62,14 +66,54 @@ class ToolBuildResult:
     deferred_agent_tools: list[tuple[ToolSpec, str]]
 
 
+def _coerce_bool(value: Any) -> bool:
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"true", "1", "yes", "y"}:
+            return True
+        if lowered in {"false", "0", "no", "n"}:
+            return False
+    return bool(value)
+
+
+def _configure_function_tool(tool: Tool, config: Dict[str, Any]) -> Tool:
+    """Return a tool instance with configuration overrides applied."""
+
+    if not isinstance(tool, FunctionTool):
+        return tool
+
+    overrides: Dict[str, Any] = {}
+
+    if "strict_json_schema" in config:
+        overrides["strict_json_schema"] = _coerce_bool(config["strict_json_schema"])
+    elif "strict_mode" in config:
+        overrides["strict_json_schema"] = _coerce_bool(config["strict_mode"])
+
+    if not overrides:
+        return tool
+
+    new_tool = replace(tool)
+    for key, value in overrides.items():
+        setattr(new_tool, key, value)
+    return new_tool
+
+
+def _build_web_search_tool(config: Dict[str, Any]) -> WebSearchTool:
+    allowed_keys = {"user_location", "filters", "search_context_size"}
+    kwargs = {key: config[key] for key in allowed_keys if key in config}
+    return WebSearchTool(**kwargs)
+
+
 def build_base_tools(spec: ToolSpec) -> ToolBuildResult:
     """Instantiate hosted/custom tools that do not depend on other agents."""
 
     if spec.kind == "web_search":
-        return ToolBuildResult([WebSearchTool()], [])
+        tool = _build_web_search_tool(spec.config)
+        return ToolBuildResult([tool], [])
 
     if spec.kind == "python_repl":
-        return ToolBuildResult([python_repl], [])
+        tool = _configure_function_tool(python_repl, spec.config)
+        return ToolBuildResult([tool], [])
 
     if spec.kind == "agent_tool":
         if not spec.target_agent:
@@ -93,9 +137,23 @@ def attach_agent_tools(
 
     tool_name = spec.name or _slugify(f"{target.name}_tool")
     tool_description = spec.description or f"Delegate to {target.name}."
-    new_tool = target.as_tool(tool_name, tool_description)
-    owner.tools.append(new_tool)
-    return new_tool
+    config = dict(spec.config)
+
+    agent_tool_kwargs: Dict[str, Any] = {}
+    if "max_turns" in config:
+        try:
+            agent_tool_kwargs["max_turns"] = int(config["max_turns"])
+        except (TypeError, ValueError):  # pragma: no cover - defensive
+            logger.warning(
+                "Invalid max_turns '%s' for agent tool '%s'; using default.",
+                config["max_turns"],
+                tool_name,
+            )
+
+    new_tool = target.as_tool(tool_name, tool_description, **agent_tool_kwargs)
+    configured_tool = _configure_function_tool(new_tool, config)
+    owner.tools.append(configured_tool)
+    return configured_tool
 
 
 __all__ = [
