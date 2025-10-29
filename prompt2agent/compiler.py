@@ -8,8 +8,16 @@ import uuid
 from agents import Agent, Runner
 from agents.agent_output import AgentOutputSchema
 
-from config import ProviderConfig, ensure_provider_config
-from models import AgentPlan, AgentSpec, ExecutionSpec, ToolSpec, WorkflowMetadata, WorkflowPlan, WorkflowSpec
+from .config import ProviderConfig, ensure_provider_config
+from .models import (
+    AgentPlan,
+    AgentSpec,
+    ExecutionSpec,
+    ToolSpec,
+    WorkflowMetadata,
+    WorkflowPlan,
+    WorkflowSpec,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +90,7 @@ def transform_prompt_to_workflow(prompt: str) -> WorkflowSpec:
         name="workflow_designer",
         handoff_description="Designs agent workflows",
         instructions=instructions,
-        output_type=AgentOutputSchema(WorkflowPlan),
+        output_type=AgentOutputSchema(WorkflowPlan, strict_json_schema=False),
         model=provider_config.model_id,
     )
 

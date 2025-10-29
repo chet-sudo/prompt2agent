@@ -7,8 +7,8 @@ import logging
 from agents import Runner
 from agents.memory import SQLiteSession
 
-from persistence import session_store_path
-from workflow import RunnableWorkflow
+from .persistence import session_store_path
+from .workflow import RunnableWorkflow
 
 logger = logging.getLogger(__name__)
 
