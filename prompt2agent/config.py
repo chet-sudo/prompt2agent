@@ -9,6 +9,10 @@ from typing import Optional
 from agents.extensions.models.litellm_provider import LitellmProvider
 from agents.models.interface import ModelProvider
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 ENV_OPENROUTER_KEY = "OPENROUTER_API_KEY"
 ENV_LITELLM_PROVIDER = "LITELLM_PROVIDER"
 ENV_MODEL_ID = "MODEL_ID"

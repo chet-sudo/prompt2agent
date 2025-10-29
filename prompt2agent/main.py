@@ -5,7 +5,8 @@ from __future__ import annotations
 import argparse
 import logging
 
-from . import load_workflow, run_workflow, save_workflow, transform_prompt_to_workflow
+from compiler import transform_prompt_to_workflow
+from persistence import load_workflow, save_workflow
 
 logger = logging.getLogger(__name__)
 

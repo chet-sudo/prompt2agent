@@ -6,8 +6,8 @@ import json
 import logging
 from pathlib import Path
 
-from .models import WorkflowSpec
-from .workflow import RunnableWorkflow, materialise_workflow
+from models import WorkflowSpec
+from workflow import RunnableWorkflow, materialise_workflow
 
 logger = logging.getLogger(__name__)
 
